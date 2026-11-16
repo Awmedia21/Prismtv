@@ -17,21 +17,15 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Create Android Project Structure & Build APK
+      - name: Install Gradle & Build APK
         run: |
-          mkdir -p app/src/main/assets app/src/main/java/com/prism/iptv app/src/main/res/values app/src/main/res/mipmap-hdpi gradle/wrapper
+          # Install Gradle directly via apt to avoid wrapper jar issues
+          sudo apt-get update && sudo apt-get install -y gradle
+          
+          mkdir -p app/src/main/assets app/src/main/java/com/prism/iptv app/src/main/res/values app/src/main/res/mipmap-hdpi
           
           # Copy your existing file and rename it to index.html for Android WebView
           cp prism-iptv.html app/src/main/assets/index.html
-          
-          # Create Gradle wrapper properties
-          cat << 'EOF' > gradle/wrapper/gradle-wrapper.properties
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
           
           # Create AndroidManifest.xml
           cat << 'EOF' > app/src/main/AndroidManifest.xml
@@ -129,13 +123,8 @@ jobs:
           dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-          # Download gradle wrapper files or generate fallback wrapper runner if needed
-          if [ ! -f gradlew ]; then
-              python3 -c "import urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/gradle/gradle/v8.0.0/gradlew', 'gradlew')"
-          fi
-          
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # Compile directly using system gradle
+          gradle assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
