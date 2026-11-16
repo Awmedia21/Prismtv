@@ -17,10 +17,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Gradle & Build APK
+      - name: Install Modern Gradle & Build APK
         run: |
-          # Install Gradle directly via apt to avoid wrapper jar issues
-          sudo apt-get update && sudo apt-get install -y gradle
+          # Download and set up modern Gradle 8.2 directly
+          wget -q https://services.gradle.org/distributions/gradle-8.2-bin.zip
+          unzip -q gradle-8.2-bin.zip
+          export PATH=$PWD/gradle-8.2/bin:$PATH
           
           mkdir -p app/src/main/assets app/src/main/java/com/prism/iptv app/src/main/res/values app/src/main/res/mipmap-hdpi
           
@@ -123,8 +125,8 @@ jobs:
           dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-          # Compile directly using system gradle
-          gradle assembleDebug
+          # Run the build with Gradle 8.2
+          gradle-8.2/bin/gradle assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
