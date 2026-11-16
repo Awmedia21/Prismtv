@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prism IPTV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
+<style>
+:root{--bg3:#1a0826;--bg:#0b0314;--bg2:#140521;--panel:#ffffff12;--line:#ffffff1f;--tx:#f4ecff;--mu:#b8a3cf;--a:#3dfc7a;--b:#ff9a3d;--c:#7a4dff;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[data-t=ocean]{--bg:#041a2b;--bg2:#08324d;--bg3:#06303a;--a:#18c8ff;--b:#6bffd0;--c:#2f7bff;--mu:#9cc3d9}[data-t=ember]{--bg:#1c0805;--bg2:#3d1208;--bg3:#42150a;--a:#ff5a36;--b:#ffc247;--c:#d6336c;--mu:#d6b0a0}[data-t=forest]{--bg:#06150e;--bg2:#0e3022;--bg3:#12301a;--a:#37d67a;--b:#e6e35a;--c:#1f9e8f;--mu:#a4c9b4}[data-t=mono]{--bg:#0b0b0e;--bg2:#1c1c24;--bg3:#111116;--a:#e8e8f0;--b:#9aa0b8;--c:#6c7390;--mu:#a0a0b0}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:Sora,system-ui,sans-serif;color:var(--tx);background:linear-gradient(160deg,var(--bg2),var(--bg) 55%,var(--bg3));overflow:hidden}
+button,input{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:3px solid var(--b);outline-offset:2px;border-radius:10px}.btn.p{height:auto;padding:10px 22px;white-space:normal;overflow:visible}.card:focus-visible{outline:0}.card:focus-visible .pos{box-shadow:0 0 0 3px var(--b)}
+#app{display:flex;height:100%}
+nav{width:168px;background:#0006;display:flex;flex-direction:column;gap:6px;padding:14px 10px;flex:none}nav .logo{margin-left:12px}.lg{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;margin-bottom:8px;border-bottom:1px solid var(--line)}.lg svg{width:44px;height:40px;flex:none}select{flex:1;min-width:160px;background:#0005;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:inherit;font:inherit}option{background:#2a0d3d}nav{overflow-y:auto;scrollbar-width:none}nav button{flex:none}.gb{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;padding:12px 0}.li small{color:var(--mu)}.lg b{display:block;font-size:23px;font-weight:700;letter-spacing:-.04em;line-height:1}.lg small{display:block;color:var(--mu);font-size:10px;letter-spacing:.18em;margin-top:4px}
+.logo{width:36px;height:36px;border-radius:10px;background:conic-gradient(from 200deg,var(--a),var(--b),var(--c),var(--a));margin-bottom:10px}
+nav button{display:flex;align-items:center;gap:12px;height:48px;padding:0 12px;border-radius:12px;font-size:14px;color:var(--mu);text-align:left}nav button b{font-size:19px;width:24px;text-align:center;font-weight:400}
+
+/* TRUE FULL SCREEN IMMERSIVE VIDEO PLAYER */
+#fs{position:fixed;inset:0;z-index:100;display:none;background:#000;flex-direction:column;justify-content:space-between}
+#fs.on{display:flex}
+#fs-video-container{position:absolute;inset:0;width:100%;height:100%;background:#000;z-index:1}
+#fs-video-container video{width:100%;height:100%;object-fit:contain;background:#000}
+.fs-top-bar{position:relative;z-index:5;display:flex;gap:12px;align-items:center;padding:20px 24px;background:linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);pointer-events:auto}
+.fs-bottom-bar{position:relative;z-index:5;padding:20px 24px;background:linear-gradient(to top, rgba(0,0,0,0.8), transparent);pointer-events:auto;display:flex;justify-content:space-between;align-items:flex-end}
+
+nav button.on{border:1.5px solid var(--c);background:color-mix(in srgb,var(--c) 25%,transparent);color:#fff}
+main{flex:1;min-width:0;display:flex;flex-direction:column;padding:14px 20px 10px;gap:12px;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.top h2{margin:0;font-size:20px}.tr{display:flex;gap:8px;align-items:center;position:relative}#thp{position:absolute;right:0;top:50px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:10px;display:none;gap:10px;z-index:9}#thp.on{display:flex}#thp button{width:44px;height:44px;border-radius:50%;border:3px solid var(--line)}#thp button.on{border-color:#fff}
+.badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:var(--c);color:#fff}
+#clock{background:#0005;padding:10px 16px;border-radius:30px;font-variant-numeric:tabular-nums}
+
+.hero{position:relative;border-radius:16px;overflow:hidden;min-height:240px;background:#000;display:flex;align-items:center;box-shadow:0 12px 40px #000a;border:1px solid var(--line)}
+.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.5;mask-image:linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)}
+.hero-content{position:relative;z-index:2;padding:24px 32px;max-width:620px;display:flex;flex-direction:column;gap:10px}
+.hero-meta{font-size:12px;color:var(--mu);display:flex;gap:8px;align-items:center;font-weight:600;letter-spacing:0.04em}
+.hero h1{margin:0;font-size:clamp(24px,3.4vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#fff}
+.hero-desc{color:#d8cde6;font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hero-acts{display:flex;gap:10px;margin-top:6px;align-items:center;flex-wrap:wrap}
+
+.cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;align-items:center}
+.cats button{white-space:nowrap;padding:6px 14px;color:var(--mu);border-bottom:2px solid transparent}
+.cats button.on{color:#fff;border-color:var(--a)}
+.search-bar{display:flex;gap:8px;align-items:center;margin-bottom:4px;max-width:520px}
+.search-bar input{background:#0006;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;width:100%}
+.view{flex:1;min-height:0;overflow:auto}
+.epg{position:relative;min-width:max-content}
+.row{display:flex;height:56px;margin-bottom:6px;align-items:center}
+.ch{width:160px;flex:none;position:sticky;left:0;z-index:3;background:var(--bg);display:flex;align-items:center;gap:8px;padding:0 8px;font-size:12px;color:var(--mu);border-radius:8px;height:100%}
+.ch i{font-style:normal;font-weight:700;background:#fff2;color:#fff;border-radius:4px;padding:2px 4px;font-size:10px;flex:none}
+.ch img{width:32px;height:32px;object-fit:contain;background:#fff1;border-radius:4px;padding:2px;flex:none}
+.ch span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slots{display:flex;position:relative}
+.p{height:50px;padding:0 14px;border-radius:8px;background:#ffffff18;border:1px solid var(--line);text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px;margin-right:3px;flex:none}
+.p.sel{background:linear-gradient(90deg,var(--c),var(--a));border-color:var(--b)}
+.p.live{border-left:3px solid var(--a)}
+.hd{display:flex;height:28px;font-size:12px;color:var(--mu)}.hd div{flex:none;border-left:1px solid var(--line);padding-left:8px}
+.now{position:absolute;top:0;bottom:0;width:2px;background:var(--a);z-index:2;pointer-events:none}
+.keys{display:flex;gap:16px;font-size:12px;color:var(--mu);flex-wrap:wrap;align-items:center}
+.keys kbd{border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin-right:6px;color:#fff;font:inherit}
+.rail-header{margin:14px 0 8px}
+.rail-header h3{margin:0;font-size:15px}
+.cards{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;padding-bottom:16px}
+.card{width:120px;flex:none;text-align:left;position:relative;display:flex;flex-direction:column;background:none;border:0;padding:0;gap:4px}
+.grid-cards .card{width:100%}
+.card .pos{height:170px;border-radius:10px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--line);width:100%}
+.card .pos img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px}
+.card .pos span{display:none}
+.card-play-btn{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid var(--line);color:#fff;display:grid;place-items:center;font-size:12px;z-index:3;opacity:0;transition:.15s}
+.card:hover .card-play-btn,.card:focus-within .card-play-btn{opacity:1}
+.card-play-btn:hover{background:var(--c);border-color:var(--b);transform:scale(1.08)}
+.card.sel .pos{border-color:var(--b);box-shadow:0 0 0 3px var(--b)}
+.card small{display:block;color:var(--mu);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:left;margin-top:2px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;max-width:760px}
+.box h3{margin:0 0 4px}.box p{margin:0 0 12px;color:var(--mu);font-size:12px;line-height:1.5}
+.f{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+input{flex:1;min-width:160px;background:#0005;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px;gap:8px}
+.sw{width:40px;height:22px;border-radius:12px;background:#fff3;position:relative;flex:none}.sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}.sw.on{background:var(--a)}.sw.on::after{left:21px}
+#login{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,color-mix(in srgb,var(--c) 45%,#000),var(--bg) 70%);padding:20px}
+#login .box{width:min(420px,100%);margin:0}
+#login h1{font-size:30px}
+
+/* FULL-SCREEN IMMERSIVE INFO / DETAILS LAYOUT */
+#modal{position:fixed;inset:0;z-index:22;display:none;background:var(--bg);padding:30px 40px;overflow-y:auto}
+#modal.on{display:block}
+#modal .box{width:100%;max-width:1100px;margin:0 auto;background:none;border:0;padding:0}
+
+/* SMART HORIZONTAL EPISODE CARD STYLING */
+.ep-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:16px}
+.ep-row-card{display:flex;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;align-items:center;cursor:pointer;text-align:left;transition:.15s;width:100%}
+.ep-row-card:hover,.ep-row-card:focus-visible{border-color:var(--b);background:#ffffff18}
+.ep-thumb{width:130px;height:80px;border-radius:8px;background:#000;position:relative;flex:none;overflow:hidden;display:grid;place-items:center}
+.ep-thumb img{width:100%;height:100%;object-fit:cover}
+.ep-play-overlay{position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid var(--line);color:#fff;display:grid;place-items:center;font-size:12px}
+.ep-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ep-info h4{margin:0;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ep-info p{margin:0;font-size:11px;color:var(--mu);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.ep-meta{font-size:10px;color:var(--mu);display:flex;gap:8px;align-items:center;margin-top:2px}
+
+#toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#000d;padding:10px 18px;border-radius:30px;font-size:13px;opacity:0;transition:.2s;z-index:30;pointer-events:none;max-width:90vw;text-align:center}#toast.on{opacity:1}
+@media(max-width:700px){nav{width:76px;padding:10px 4px}nav button{flex-direction:column;justify-content:center;gap:2px;height:58px;padding:0;font-size:10px}.lg div{display:none}.lg{justify-content:center;padding:2px 0 10px}.keys{display:none}main{padding:10px 12px 4px}.hero{min-height:0;flex-direction:column-reverse;gap:8px}.desc{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="login"><div class="box"><div class="logo"></div><h1>Prism</h1>
+<p>Sign in with your provider’s Xtream Codes details, or open the demo guide.</p>
+<div class="f"><input id="lu" placeholder="Panel address (blank = this site)"></div>
+<div class="f"><select id="sv" aria-label="Service"></select></div>
+<p id="lm" style="color:var(--mu);font-size:12px;margin:0 0 8px"></p>
+<div class="f"><input id="lun" placeholder="Username"><input id="lp" type="password" placeholder="Password"></div>
+<div class="f"><button class="btn p" id="go">Sign in</button><button class="btn" id="demo">Open demo</button></div></div></div>
+
+<div id="app"><nav id="nav"></nav><main>
+<div class="top"><h2 id="ttl"></h2><div class="tr"><button class="btn" id="thm">◐ Theme</button><div id="thp"></div><div id="clock"></div></div></div>
+<section class="hero" id="hero"></section>
+<div id="searchWrap" class="search-bar" style="display:none"><input id="q" type="search" placeholder="Search movies or series…"><button class="btn" id="qclr" style="display:none">✕</button></div>
+<div class="cats" id="cats"></div>
+<div class="view" id="view"></div>
+<div class="keys" id="keys"><span><kbd>OK</kbd>Select</span><span><kbd>⏪</kbd><kbd>⏩</kbd>Earlier, later</span><span><kbd>Menu</kbd>Themes</span><span><kbd>Back</kbd>Home</span></div>
+</main></div>
+
+<div id="modal"><div class="box" id="mbox"></div></div>
+
+<!-- FULLSCREEN IMMERSIVE PLAYER OVERLAY -->
+<div id="fs">
+  <div class="fs-top-bar">
+    <button class="btn" id="fsx">← Back</button>
+    <span class="badge" id="fsbadge">LIVE</span>
+    <button class="btn" id="fsfb" style="display:none">Try Stremio Fallback</button>
+  </div>
+  <div id="fs-video-container"></div>
+  <div class="fs-bottom-bar">
+    <div id="fst"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),m.length>45?7000:2600)};
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const fmt=m=>{m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mm=m%60,ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+String(mm).padStart(2,'0')+' '+ap};
+let NOW=15*60+33,START=15*60,T0=0;const PX=5;
+const cats=['US News','US Kids','US Sports','US Movies','UK Entertainment'];
+const lineup={
+'US News':[[4717,'CNBC','',[['CNBC Innovation Lab',60],['The CNBC Conversation',30],['The CNBC Conversation',30],['CNBC Meets',60]]],[4718,'CNN','',[['Inside Politics With Manu Raju',60],['State of the Union With Jake Tapper and Dana Bash',120],['Fareed Zakaria GPS',60]]],[4719,'CNN HD','',[['Inside Politics With Manu Raju',60],['State of the Union With Jake Tapper and Dana Bash',120],['Fareed Zakaria GPS',60]]],[4720,'CSN Bay Area','',[['CSN Bay Area',240]]]],
+'US Kids':[[4501,'Toon Orbit','',[['Rocket Pups',30],['Moon Bakery',30],['Dino Detectives',60],['Rocket Pups',60]]],[4502,'Kid Bay','',[['Pixel Pals',60],['Cloud Club',60],['Moon Bakery',60],['Pixel Pals',60]]]],
+'US Sports':[[4601,'Arena 1','',[['Premier Matchday Live',120],['Post-Match Analysis',60],['Cup Highlights',60]]],[4602,'Arena 2','',[['Gridiron Sunday',180],['Locker Room',60]]]],
+'US Movies':[[4801,'Cine One','',[['Harbor Lights',120],['The Long Signal',120]]],[4802,'Cine Two','',[['Night Courier',90],['Paper Moons',90],['Night Courier',60]]]],
+'UK Entertainment':[[4901,'Channel Nine','',[['The Quiz Factory',60],['Bake Off Rewind',60],['Saturday Sing',120]]],[4902,'Drama Plus','',[['Salford Nights',60],['Coastline',60],['Salford Nights',120]]]]};
+const blurb=t=>t+' brings viewers an in-depth look with a diverse set of guests, analysts and field reports from across the week.';
+let st={tab:'Guide',nav:'home',cat:'US News',sel:null,off:0,stremioCat:'All Addons',query:''};
+const nv=[
+  ['home','⌂','Home'],
+  ['live','▭','Live TV'],
+  ['films','▦','Movies'],
+  ['series','☰','Series'],
+  ['stremio','◈','Stremio Fallback'],
+  ['watch','★','Watchlist'],
+  ['groups','☷','Manage Groups'],
+  ['addons','⬡','Addons'],
+  ['settings','⚙','Settings']
+];
+const LOGO='<div class="lg" aria-label="Prism IPTV"><svg viewBox="0 0 44 40" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4 L33 33 H7 Z" stroke="#fff" stroke-width="2.2" fill="#ffffff14"/><path d="M0 23 L13 23" stroke="#fff" stroke-width="2.5"/><path d="M27.5 23 L43 12" stroke="var(--a)" stroke-width="2.5"/><path d="M27.5 23 L43 23" stroke="var(--b)" stroke-width="2.5"/><path d="M27.5 23 L43 34" stroke="var(--c)" stroke-width="2.5"/></svg><div><b>Prism</b><small>IPTV</small></div></div>';
+function rNav(){$('#nav').innerHTML=LOGO+nv.filter(n=>!(n[0] in M)||secs.includes(M[n[0]])).map(n=>`<button class="${st.nav==n[0]?'on':''}" data-n="${n[0]}"><b>${n[1]}</b><span>${n[2]}</span></button>`).join('')}
+function rTabs(){$('#ttl').textContent=nv.find(n=>n[0]==st.nav)[2]}
+const TH=[['aurora','#ff3d9a','#7a4dff'],['ocean','#18c8ff','#2f7bff'],['ember','#ff5a36','#ffc247'],['forest','#37d67a','#1f9e8f'],['mono','#e8e8f0','#6c7390']];
+function setTheme(n){document.documentElement.dataset.t=n;store.set('th',n);$('#thp').innerHTML=TH.map(t=>`<button class="${t[0]==n?'on':''}" data-th="${t[0]}" title="${t[0]}" aria-label="${t[0]} theme" style="background:linear-gradient(135deg,${t[1]},${t[2]})"></button>`).join('')}
+
+const posterCache = store.get('pcache', {});
+function cleanTitleForMeta(t){
+  return String(t).replace(/\(\d{4}\)|\[.*?\]|\b(4K|1080p|720p|HD|FHD|UHD|MULTI|SUB|DUB|S\d+|E\d+)\b/gi,'').replace(/[-_:.]+$/,'').trim();
+}
+window.fixPoster = async function(imgEl, rawTitle, kind){
+  imgEl.onerror = null;
+  const clean = cleanTitleForMeta(rawTitle);
+  const cacheKey = (kind==='Series'?'series:':'movie:') + clean.toLowerCase();
+  if(posterCache[cacheKey]){
+    if(posterCache[cacheKey] !== 'NONE'){
+      imgEl.src = posterCache[cacheKey];
+      const card = imgEl.closest('.card');
+      if(card) card.dataset.img = posterCache[cacheKey];
+    } else { imgEl.remove(); }
+    return;
+  }
+  try {
+    const sType = (kind === 'Series' || kind === 'series') ? 'series' : 'movie';
+    const r = await fetch(`https://v3-cinemeta.strem.io/catalog/${sType}/top/search=${encodeURIComponent(clean)}.json`);
+    const j = await r.json();
+    const hit = j && j.metas && j.metas.find(m => m.poster);
+    if(hit && hit.poster){
+      posterCache[cacheKey] = hit.poster;
+      store.set('pcache', posterCache);
+      imgEl.src = hit.poster;
+      const card = imgEl.closest('.card');
+      if(card){
+        card.dataset.img = hit.poster;
+        if(!card.dataset.imdb && hit.imdb_id) card.dataset.imdb = hit.imdb_id;
+      }
+      return;
+    }
+  } catch(e){}
+  posterCache[cacheKey] = 'NONE';
+  imgEl.remove();
+};
+
+function hero(o){
+  $('#hero').innerHTML=`
+    ${o.img ? `<img class="hero-bg" src="${esc(o.img)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
+    <div class="hero-content">
+      <div class="hero-meta">${o.badge?'<span class="badge">'+o.badge+'</span>':''}<b>${o.ch}</b><span>${o.meta}</span></div>
+      <h1>${o.title}</h1>
+      <div class="hero-desc">${o.desc}</div>
+      <div class="hero-acts">
+        <button class="btn p" data-hero-play>▶ ${o.cta||'Play'}</button>
+        <button class="btn" data-hero-info>ℹ More Info</button>
+        ${o.stremioBtn?`<button class="btn" data-stremio-play>◈ Stremio</button>`:''}
+      </div>
+    </div>`;
+}
+
+function guide(){
+const chs=(lineup[st.cat]||[]).slice(0,30);if(!chs.length){$('#view').innerHTML="<div class='desc' style='display:block'>No channels in this group.</div>";return}let h='<div class="epg"><div class="hd"><div style="width:160px;border:0"></div>';
+for(let m=0;m<240;m+=30)h+=`<div style="width:${30*PX}px">${fmt(START+m+st.off).replace(':00 ',' ')}</div>`;
+h+='</div>';const nowx=160+(NOW-START-st.off)*PX;if(nowx>160)h+=`<div class="now" style="left:${nowx}px"></div>`;
+chs.forEach(c=>{let t=START,rows=c[3].map(x=>{const r={t:x[0],s:t,e:t+x[1]};t+=x[1];return r});
+h+=`<div class="row"><div class="ch"><i>${c[0]}</i>${c[2]?`<img src="${esc(c[2])}" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<span>${c[1]}</span></div><div class="slots">`;
+rows.forEach(r=>{const a=Math.max(r.s,START+st.off),w=(r.e-a)*PX-3;if(w<20)return;const key=c[0]+r.t;
+h+=`<button class="p ${r.s<=NOW&&r.e>NOW?'live':''} ${st.sel==key?'sel':''}" style="width:${w}px" data-k="${key}" data-c="${c[0]}" data-s="${r.s}">${r.t}</button>`});h+='</div></div>'});
+$('#view').innerHTML=h+'';
+const pick=b=>{const ch=chs.find(c=>c[0]==b.dataset.c);st.lsrc=REAL&&ch[4]?su('live',ch[4],'m3u8'):'';st.lsrcTs=REAL&&ch[4]?su('live',ch[4],'ts'):'';let t=START;const rows=ch[3].map(x=>{const r={t:x[0],s:t,e:t+x[1]};t+=x[1];return r});
+const r=rows.find(r=>r.s==b.dataset.s);st.sel=b.dataset.k;document.querySelectorAll('.epg .p.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};
+$('#view').onpointerdown=e=>{const b=e.target.closest('.p');st.was=!!b&&b.dataset.k==st.sel};
+$('#view').onclick=e=>{const b=e.target.closest('.p');if(!b)return;const go=e.detail===0||st.was;pick(b);if(go)full(st.lsrc,st.lsrcTs,true)};
+$('#view').onfocusin=e=>{const b=e.target.closest('.p');if(b&&b.dataset.k!=st.sel)pick(b)};}
+
+const G={Action:['Harbor Lights','Low Orbit','Copper Hill','Iron Tide','Red Circuit','Skyline Run'],Drama:['Paper Moons','Last Ferry','Field Notes','Glass Orchard','Quiet Harbour','Tidewater'],Comedy:['Night Courier','Salford Nights','Pie Chart','Lucky Break','Odd Lodgers','Sunday Roast'],'Sci-Fi':['The Long Signal','Deep Static','Orbit Nine','Echo Garden','Meridian','Cold Sleep'],Thriller:['Dead Air','Blind Alley','The Informant','Wire Fox','Grey Hour','Cellar Door'],Family:['Rocket Pups','Moon Bakery','Dino Detectives','Pixel Pals','Cloud Club','Kite Valley']};
+const SRC=['Provider VOD','Jellyfin','Plex'];
+const pf=store.get('pf',{hidden:{live:[],films:[],series:[]},pinned:{live:[],films:[],series:[]},home:{banner:1,rotate:1,cont:1,pm:1,ps:1,nm:1,ns:1,tm:1,ts:1}}),wl=store.get('wl',[]);let FEAT=[];let secs=store.get('secs',['live','movies','series']);const M={live:'live',films:'movies',series:'series'};
+let prof=store.get('prof',[{n:'Me',kid:0}]),pa=store.get('pa',0),pc=store.get('pc',''),pl=store.get('pl',0),ar=store.get('ar','Weekly');
+const ADULT=/adult|xxx|\+18|18\+/i,kid=()=>!!(prof[pa]&&prof[pa].kid);
+let REAL=0,SESS=store.get('sess',null),RV={films:{},series:{}},ALL_VOD={films:null,series:null};
+const enc=encodeURIComponent,esc=s=>String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),b64=s=>{try{return decodeURIComponent(escape(atob(s)))}catch(e){return s}};
+const ap=(a,x)=>fetch(SESS.b+'?api=xtream&service='+enc(SESS.sv)+'&u='+enc(SESS.u)+'&p='+enc(SESS.p)+'&action='+a+(x||'')).then(async r=>{const t=await r.text();try{return JSON.parse(t)}catch(e){throw new Error('Panel replied '+r.status+': '+t.slice(0,90).replace(/<[^>]*>/g,' '))}});
+const su=(t,id,ext)=>SESS.b+'?api=stream&service='+enc(SESS.sv)+'&u='+enc(SESS.u)+'&p='+enc(SESS.p)+'&type='+t+'&id='+id+'&ext='+ext;
+function realClock(){const d=new Date();NOW=d.getHours()*60+d.getMinutes();START=Math.floor(NOW/30)*30;T0=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()+START*60000}
+
+async function loadEpg(){const cat=st.cat,chs=(lineup[cat]||[]).slice(0,30);await Promise.all(chs.map(async c=>{if(c.done)return;c.done=1;try{const j=await ap('get_short_epg','&stream_id='+c[4]+'&limit=8');
+const L=(j.epg_listings||[]).map(e=>({t:b64(e.title),s:+e.start_timestamp*1000,e:+e.stop_timestamp*1000})).filter(e=>e.e>T0).sort((a,b)=>a.s-b.s);
+if(L.length){let cur=T0,p=[];L.forEach(e=>{const s=Math.max(e.s,cur);if(s>cur+60000)p.push(['No information',Math.round((s-cur)/60000)]);const d=Math.round((e.e-s)/60000);if(d>0){p.push([e.t,d]);cur=e.e}});c[3]=p}else c[3]=[['No guide data',240]]}catch(x){c[3]=[['No guide data',240]]}}));
+if(st.nav=='live'&&st.cat==cat){st.sel=null;guide()}}
+
+const cardR=x=>{
+  const h=(x.id*37)%360;
+  const imgUrl = x.img || '';
+  return `<button class='card' data-t='${esc(x.t)}' data-k='${x.k}' data-s='Provider VOD' data-h='${h}' data-i='${x.id}' data-e='${x.ext||''}' data-img='${esc(imgUrl)}'>
+    <div class='pos' style='background:linear-gradient(160deg,hsl(${h} 55% 32%),hsl(${h+40} 45% 14%))'>
+      <img src='${esc(imgUrl || 'invalid://placeholder')}' loading='lazy' referrerpolicy='no-referrer' onerror="fixPoster(this,'${esc(x.t)}','${x.k}')">
+    </div>
+    <div class='card-play-btn' data-card-play title='Play'>▶</div>
+    <small>${esc(x.t)}</small>
+  </button>`;
+};
+const rr=(n,l)=>l.length?`<div class='rail-header'><h3>${n}</h3></div><div class='cards'>${l.map(cardR).join('')}</div>`:'';
+function rfin(h){$('#cats').innerHTML='';$('#view').innerHTML=h||"<div class='desc' style='display:block'>Nothing in this section yet.</div>";hookCards();}
+
+const CID={live:{},films:{},series:{}},A=l=>Array.isArray(l)?l:[];let LERR='';window.addEventListener('unhandledrejection',e=>toast('Error: '+((e.reason&&e.reason.message)||e.reason)));window.addEventListener('error',e=>toast('Error: '+e.message));
+async function ensure(kind,name){const R=kind=='live'?lineup:RV[kind];if(R[name])return;const act={live:'get_live_streams',films:'get_vod_streams',series:'get_series'}[kind];let l=[];try{l=A(await ap(act,'&category_id='+CID[kind][name]))}catch(e){LERR=e.message}
+R[name]=kind=='live'?l.map(c=>[c.num||c.stream_id,c.name,c.stream_icon||'',[['Loading guide\u2026',240]],c.stream_id]):l.map(v=>kind=='films'?{t:v.name,id:v.stream_id,img:v.stream_icon,ext:v.container_extension||'mp4',r:+v.rating||0,a:+v.added||0,k:'Films'}:{t:v.name,id:v.series_id,img:v.cover,r:+v.rating||0,a:+v.last_modified||0,k:'Series'})}
+
+async function searchProviderVod(kind, term){
+  const q = term.trim().toLowerCase();
+  if(!q) return rvod(kind);
+  $('#cats').innerHTML = '';
+  $('#view').innerHTML = `<div class='desc' style='display:block'>Searching ${kind === 'films' ? 'movies' : 'series'} for "${esc(term)}"…</div>`;
+  
+  if(!REAL){
+    const allDemo = Object.keys(G).flatMap((g,gi)=>G[g].map((t,i)=>({t:kind==='series'?t+' · S1':t,k:kind==='series'?'Series':'Films',s:'Provider VOD',h:(gi*50+i*37)%360})));
+    const matches = allDemo.filter(x => x.t.toLowerCase().includes(q));
+    $('#view').innerHTML = matches.length
+      ? `<div class="rail-header"><h3>Search Results (${matches.length})</h3></div><div class="grid-cards">${matches.map(cardH).join('')}</div>`
+      : `<div class="desc" style="display:block">No matches found for "${esc(term)}".</div>`;
+    hookCards();
+    return;
+  }
+
+  if(!ALL_VOD[kind]){
+    try {
+      const act = kind === 'films' ? 'get_vod_streams' : 'get_series';
+      const raw = A(await ap(act));
+      ALL_VOD[kind] = raw.map(v => kind === 'films'
+        ? {t:v.name,id:v.stream_id,img:v.stream_icon,ext:v.container_extension||'mp4',r:+v.rating||0,a:+v.added||0,k:'Films'}
+        : {t:v.name,id:v.series_id,img:v.cover,r:+v.rating||0,a:+v.last_modified||0,k:'Series'});
+    } catch(e){
+      ALL_VOD[kind] = Object.values(RV[kind]).flat();
+    }
+  }
+
+  const matches = (ALL_VOD[kind] || []).filter(x => x.t && x.t.toLowerCase().includes(q)).slice(0, 80);
+  $('#view').innerHTML = matches.length
+    ? `<div class="rail-header"><h3>Search Results (${matches.length})</h3></div><div class="grid-cards">${matches.map(cardR).join('')}</div>`
+    : `<div class="desc" style="display:block">No ${kind==='films'?'movies':'series'} found matching "${esc(term)}".</div>`;
+  hookCards();
+}
+
+async function loadReal(){if(!SESS)return;toast('Loading your service\u2026');LERR='';const g=(a,k)=>secs.includes(k)?ap(a).then(j=>{if(!Array.isArray(j))LERR=(j&&j.error)||('Provider replied: '+JSON.stringify(j).slice(0,100));return j}).catch(e=>{LERR=e.message;return []}):[];
+const lc=A(await g('get_live_categories','live')),vc=A(await g('get_vod_categories','movies')),sc=A(await g('get_series_categories','series'));
+cats.length=0;Object.keys(lineup).forEach(k=>delete lineup[k]);RV={films:{},series:{}};ALL_VOD={films:null,series:null};CID.live={};CID.films={};CID.series={};
+lc.forEach(c=>{CID.live[c.category_name]=c.category_id;cats.push(c.category_name)});vc.forEach(c=>CID.films[c.category_name]=c.category_id);sc.forEach(c=>CID.series[c.category_name]=c.category_id);
+if(lc.length+vc.length+sc.length===0){toast(LERR||'Your service returned no groups. Check the DNS in the panel.');return}
+REAL=1;st.cat=cats[0];render();toast(lc.length+' live groups, '+vc.length+' movie groups, '+sc.length+' series groups')}
+
+async function rvod(kind){
+  if(st.query && st.query.trim()) return searchProviderVod(kind, st.query);
+  $('#cats').innerHTML='';$('#hero').innerHTML="<div class='hero-content'><h1>"+nv.find(n=>n[0]==kind)[2]+'</h1></div>';$('#view').innerHTML="<div class='desc' style='display:block'>Loading\u2026</div>";
+  const all=vis(kind,Object.keys(CID[kind])),names=all.slice(0,st.mx||8);for(const g of names){await ensure(kind,g);if(st.nav!=kind)return}
+  rfin(names.map(g=>rr(g,(RV[kind][g]||[]).slice(0,40))).join('')+(all.length>names.length?"<button class='btn' data-more>Load more groups</button>":'')||(LERR?"<div class='desc' style='display:block'>"+esc(LERR)+'</div>':''))
+}
+
+async function rhome(){$('#cats').innerHTML='';$('#view').innerHTML="<div class='desc' style='display:block'>Loading\u2026</div>";
+const fn=vis('films',Object.keys(CID.films)).slice(0,4),sn=vis('series',Object.keys(CID.series)).slice(0,4);for(const g of fn)await ensure('films',g);for(const g of sn)await ensure('series',g);if(st.nav!='home')return;
+const hp=pf.home,fl=fn.flatMap(k=>RV.films[k]||[]),sr=sn.flatMap(k=>RV.series[k]||[]),S=(l,f)=>l.slice().sort(f).slice(0,14);FEAT=[];
+const rows=[['pm','Popular Movies',fl.slice(0,14)],['ps','Popular Series',sr.slice(0,14)],['nm','New Movies',S(fl,(a,b)=>b.a-a.a)],['ns','New Series',S(sr,(a,b)=>b.a-a.a)],['tm','Top Rated Movies',S(fl,(a,b)=>b.r-a.r)],['ts','Top Rated Series',S(sr,(a,b)=>b.r-a.r)]];
+rfin(rows.map(r=>hp[r[0]]?rr(r[1],r[2]):'').join(''));
+FEAT=[...fl.slice(0,5),...sr.slice(0,5)];st.fi=0;
+if(hp.banner&&FEAT.length)fh();}
+
+function decorate(){const ss=st.ss||'Profiles',v=$('#view'),map={Provider:'Playlist',Home:'Home','Media servers':'Content',Panel:'Content'};
+v.querySelectorAll('.box').forEach(b=>{b.style.display=map[b.querySelector('h3').textContent]==ss?'':'none'});
+v.insertAdjacentHTML('afterbegin',"<div class='f'>"+['Profiles','Playlist','Appearance','Home','Content'].map(x=>`<button class='btn ${x==ss?'p':''}' data-ss='${x}'>${x}</button>`).join('')+'</div>'+custom(ss))}
+function custom(ss){const bx=(t,p,c)=>`<div class='box'><h3>${t}</h3>${p?`<p>${p}</p>`:''}${c}</div>`;
+if(ss=='Profiles')return bx('Profiles','Switch profile, add or edit one.',prof.map((x,i)=>`<div class='li'><span>${x.n}${x.kid?' \u00b7 Child':''}${i==pa?' \u00b7 Active':''}</span><span>${i==pa?'':`<button class='btn' data-pf='${i}'>Switch</button>`}${prof.length>1&&i!=pa?` <button class='btn' data-pd='${i}'>Delete</button>`:''}</span></div>`).join('')+"<div class='f' style='margin-top:12px'><input id='pn' placeholder='New profile name'><label><input type='checkbox' id='pk'> Child</label><button class='btn' data-pnew>Add</button></div>")+bx('Parental','Four digits. The same code leaves a child profile and opens locked groups.',`<div class='f'><input id='pcd' inputmode='numeric' maxlength='4' placeholder='${pc?'\u2022\u2022\u2022\u2022':'Parent code'}'><button class='btn' data-pcs>${pc?'Change':'Set'} code</button></div><div class='li'><span>Lock adult groups<br><small>Opening a group named Adult, XXX or +18 asks for the code, once per session.</small></span><button class='sw ${pl?'on':''}' data-plk aria-label='Lock adult groups'></button></div>`);
+if(ss=='Appearance'){const cur=document.documentElement.dataset.t||'aurora';return bx('Theme','Pick the look of the app.',"<div class='f'>"+TH.map(t=>`<button data-th='${t[0]}' aria-label='${t[0]} theme' title='${t[0]}' style='width:56px;height:56px;border-radius:50%;border:3px solid ${cur==t[0]?'#fff':'var(--line)'};background:linear-gradient(135deg,${t[1]},${t[2]})'></button>`).join('')+'</div>')}
+if(ss=='Playlist'){const e=store.get('exp',null);return bx('Playlist info','Your active service.',`<div class='li'><span>Name</span><span>${store.get('svn','Demo')}</span></div><div class='li'><span>Server</span><span>Hidden by your panel</span></div><div class='li'><span>Sections</span><span>${secs.join(', ')}</span></div><div class='li'><span>Expiry</span><span>${e?new Date(e*1000).toLocaleDateString():'Unknown'}</span></div>`)+bx('Refresh','Re-download channels, VOD, series and the guide from your provider.',"<div class='f'><button class='btn' data-rf>Refresh now</button><button class='btn' data-ar>Auto-refresh: "+ar+"</button><button class='btn' data-ap>Add playlist</button></div>")}
+return ''}
+
+const HK=[['banner','Featured banner'],['rotate','Rotate the banner (every 8s)'],['cont','Continue watching row'],['pm','Popular Movies'],['ps','Popular Series'],['nm','New Movies'],['ns','New Series'],['tm','Top Rated Movies'],['ts','Top Rated Series']];
+const HR=[['pm','Popular Movies','Films',0],['ps','Popular Series','Series',1],['nm','New Movies','Films',2],['ns','New Series','Series',0],['tm','Top Rated Movies','Films',1],['ts','Top Rated Series','Series',2]];
+const ALL=[];Object.keys(G).forEach((g,gi)=>G[g].forEach((t,i)=>ALL.push({t,g,h:(gi*50+i*37)%360,s:SRC[(gi+i)%3]+'|'+SRC[(gi+i+2)%3]})));
+const gl=k=>k=='live'?cats:Object.keys(REAL?CID[k]:G);
+const vis=(k,l)=>{const p=pf.pinned[k],h=pf.hidden[k];return [...p.filter(x=>l.includes(x)),...l.filter(x=>!p.includes(x))].filter(x=>!h.includes(x)&&!(kid()&&ADULT.test(x)))};
+const cardH=x=>{
+  const h=+x.h;
+  return `<button class='card' data-t='${esc(x.t)}' data-k='${x.k}' data-s='${x.s}' data-h='${h}'><div class='pos' style='background:linear-gradient(160deg,hsl(${h} 60% 38%),hsl(${h+40} 50% 14%))'><img src='invalid://placeholder' loading='lazy' onerror="fixPoster(this,'${esc(x.t)}','${x.k}')"></div><div class='card-play-btn' data-card-play title='Play'>▶</div><small>${esc(x.t)}</small></button>`;
+};
+const rail=(n,it)=>`<div class='rail-header'><h3>${n}</h3></div><div class='cards'>${it.map(cardH).join('')}</div>`;
+
+function hookCards(){
+  const view = $('#view');
+  view.onclick = e => {
+    const card = e.target.closest('.card');
+    if(card) openInfoModal(card);
+  };
+  view.onfocusin = e => {
+    const card = e.target.closest('.card');
+    if(card) {
+      document.querySelectorAll('.card.sel').forEach(x => x.classList.remove('sel'));
+      card.classList.add('sel');
+    }
+  };
+}
+
+function openInfoModal(card){
+  const d = card.dataset;
+  const isSeries = d.k === 'Series' || d.stype === 'series' || /series/i.test(d.k);
+  const isStremio = d.stype === 'movie' || d.stype === 'series';
+  const poster = card.querySelector('img') ? card.querySelector('img').src : (d.img||'');
+
+  st.cur={
+    t:d.t,
+    k:d.k,
+    s:d.s,
+    h:d.h,
+    id:d.i||'',
+    ext:d.e||'mp4',
+    imdb:d.imdb||'',
+    stype:d.stype||'',
+    isSeries: isSeries,
+    src:d.i&&!isSeries?su('movie',d.i,d.e||'mp4'):(d.streamUrl||'')
+  };
+
+  const m = $('#modal'), mb = $('#mbox');
+  mb.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+      <button class="btn" id="mclose" style="font-size:18px;padding:4px 12px">← Back</button>
+      <h3 style="font-size:26px;margin:0">${esc(d.t)}</h3>
+    </div>
+    <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap">
+      ${poster?`<img src="${esc(poster)}" style="width:220px;height:320px;object-fit:cover;border-radius:12px;box-shadow:0 8px 30px #000c" referrerpolicy="no-referrer">`:''}
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px">
+          <span style="color:var(--mu)">Genre:</span><span>${esc(d.k)}</span>
+          <span style="color:var(--mu)">Source:</span><span>${esc(d.s||'Provider VOD')}</span>
+          <span style="color:var(--mu)">Release Date:</span><span>2026</span>
+          <span style="color:var(--mu)">Rating:</span><span>⭐ 7.3/10</span>
+        </div>
+        <p style="font-size:14px;line-height:1.6;color:#d8cde6;margin:0">${esc(d.desc||blurb(d.t))}</p>
+        <div class="acts" style="display:flex;gap:12px;margin-top:10px">
+          <button class="btn p" id="modalPlayBtn" style="padding:12px 28px;font-size:15px">▶ ${isSeries?'Select Episode':(isStremio?'Browse Stremio Links':'Play Movie')}</button>
+          <button class="btn" id="modalWlBtn" style="padding:12px 20px;font-size:15px">${wl.some(x=>x.t==d.t)?'✓ In watchlist':'+ Watchlist'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  m.classList.add('on');
+  const pb = $('#modalPlayBtn'); if(pb) pb.focus();
+
+  mb.onclick = ev => {
+    if(ev.target.id === 'mclose' || ev.target.id === 'modal') m.classList.remove('on');
+    if(ev.target.id === 'modalPlayBtn'){
+      m.classList.remove('on');
+      playCurItem();
+    }
+    if(ev.target.id === 'modalWlBtn'){
+      const i = wl.findIndex(x=>x.t==st.cur.t);
+      if(i>=0) wl.splice(i,1); else wl.push(st.cur);
+      store.set('wl',wl);
+      ev.target.textContent = i>=0?'+ Watchlist':'✓ In watchlist';
+      toast(i>=0?'Removed from watchlist':'Added to watchlist');
+    }
+  };
+}
+
+function playCurItem(){
+  if(!st.cur) return;
+  const item = st.cur;
+  const isActuallySeries = item.k === 'Series' || item.stype === 'series' || /s\d+/i.test(item.t) || item.isSeries;
+  
+  if(item.stype === 'movie'){
+    resolveStremioStreams(item.t, item.stype, item.imdb);
+  } else if(isActuallySeries || item.k === 'Series'){
+    openXtreamSeries(item);
+  } else if(item.src){
+    full(item.src, null, false);
+  } else {
+    resolveStremioStreams(item.t, 'movie', item.imdb);
+  }
+}
+
+function fh(){
+  const x = FEAT[st.fi%FEAT.length];
+  if(!x) return;
+  st.cur = { t:x.t, k:x.k, s:x.s||'Provider VOD', h:x.h, id:x.id||'', ext:x.ext||'mp4', imdb:x.imdb||'', stype:x.stype||'', src:x.id&&x.k=='Films'?su('movie',x.id,x.ext||'mp4'):'' };
+  hero({
+    img: x.img || '',
+    ch: x.k || 'Featured',
+    meta: '· 2026 · ★ 7.2',
+    title: x.t,
+    desc: blurb(x.t),
+    cta: x.k === 'Series' ? 'Select Episode' : 'Play Movie',
+    stremioBtn: 1
+  });
+}
+
+function home(){
+  if(REAL) return rhome();
+  const hp=pf.home,ok=k=>x=>!pf.hidden[k].includes(x.g)&&secs.includes(k=='films'?'movies':'series'),mk=(k,l)=>l.map(x=>({...x,k,t:k=='Series'?x.t+' · S1':x.t}));let h='';
+  if(hp.cont){const c=mk('Series',ALL.filter(ok('series')).slice(0,6));if(c.length)h+=rail('Continue watching',c)}
+  HR.forEach(r=>{if(!hp[r[0]])return;const it=mk(r[2],ALL.filter(ok(r[2]=='Series'?'series':'films')).filter((x,j)=>(j+r[3])%3==0).slice(0,9));if(it.length)h+=rail(r[1],it)});
+  $('#view').innerHTML=h||"<div class='desc' style='display:block'>All Home rows are off. Turn them on in Settings.</div>";
+  hookCards();
+  FEAT=[...mk('Films',ALL.filter(ok('films')).slice(0,3)),...mk('Series',ALL.filter(ok('series')).slice(0,3))];st.fi=0;
+  if(hp.banner&&FEAT.length)fh();else $('#hero').innerHTML="<div class='hero-content'><h1>Home</h1></div>";
+}
+setInterval(()=>{if(st.nav!='home'||!pf.home.banner||!pf.home.rotate||document.activeElement.classList.contains('card'))return;st.fi=(st.fi+1)%FEAT.length;fh()},8000);
+
+function watch(){$('#hero').innerHTML="<div class='hero-content'><h1>Watchlist</h1><div class='hero-desc'>Films and series you saved to watch later.</div></div>";$('#view').innerHTML=wl.length?rail('Your list',wl):"<div class='desc' style='display:block'>Nothing saved yet. Open a title and choose + Watchlist.</div>";hookCards();}
+function groups(){const S=[['live','Live TV Groups','Choose which channel groups appear, and pin your favourites first.'],['films','VOD Groups','Choose which movie groups appear, and pin your favourites first.'],['series','Series Groups','Choose which series groups appear, and pin your favourites first.']],s=S.find(x=>x[0]==st.gs);
+if(!s){$('#hero').innerHTML="<div class='hero-content'><h1>Manage Groups</h1><div class='hero-desc'>Hide groups you never watch, pin the ones you always do.</div></div>";$('#view').innerHTML="<div class='box'>"+S.map(x=>`<button class='li gb' data-gs='${x[0]}'><span><b>${x[1]}</b><br><small>${x[2]}</small></span><span>›</span></button>`).join('')+'</div>';return}
+const k=s[0],all=gl(k),h=pf.hidden[k],p=pf.pinned[k],m=st.gm||'hide';
+$('#hero').innerHTML=`<div class='hero-content'><h1>${s[1]}</h1><div class='hero-desc'>${m=='hide'?'Checked groups are hidden from this section.':m=='pin'?'Pinned groups appear first.':'Move pinned groups up or down.'}</div></div>`;
+let b="<div class='f'><button class='btn' data-gb>‹ Back</button>"+[['hide','Show & Hide'],['pin','Pin Groups'],['ord','Reorder Pinned']].map(x=>`<button class='btn ${m==x[0]?'p':''}' data-gm='${x[0]}'>${x[1]}</button>`).join('')+"</div><div class='box'>";
+if(m=='hide')b+=`<div class='f'><button class='btn' data-ha='1'>Hide all</button><button class='btn' data-ha='0'>Show all</button><span class='chip'>${h.length}/${all.length} hidden</span></div>`+all.map(g=>`<div class='li'><span>${g}</span><button class='sw ${h.includes(g)?'on':''}' data-hg='${g}' aria-label='Hide ${g}'></button></div>`).join('');
+else if(m=='pin')b+=all.map(g=>`<div class='li'><span>${g}</span><button class='sw ${p.includes(g)?'on':''}' data-pg='${g}' aria-label='Pin ${g}'></button></div>`).join('');
+else b+=p.length?p.map(g=>`<div class='li'><span>${g}</span><span><button class='btn' data-up='${g}'>↑</button> <button class='btn' data-dn='${g}'>↓</button></span></div>`).join(''):'<p>Pin some groups first.</p>';
+$('#view').innerHTML=b+'</div>'}
+
+function vod(kind){
+  if(st.query && st.query.trim()) return searchProviderVod(kind, st.query);
+  if(REAL)return rvod(kind);const f=st.src||'All';
+  $('#cats').innerHTML=['All',...SRC].map(s=>`<button class="${s==f?'on':''}" data-s="${s}">${s}</button>`).join('');
+  let h='';vis(kind=='series'?'series':'films',Object.keys(G)).forEach(g=>{const gi=Object.keys(G).indexOf(g),it=G[g].map((t,i)=>{const s=kind=='series'||(kind=='home'&&i%2);return{t:s?t+' · S1':t,k:s?'Series':'Films',s:[SRC[(gi+i)%3],SRC[(gi+i+2)%3]],h:(gi*50+i*37)%360}}).filter(x=>(kind=='home'||x.k.toLowerCase()==kind)&&(f=='All'||x.s.includes(f)));
+  if(!it.length)return;h+=`<div class="rail-header"><h3>${g}</h3></div><div class="cards">`+it.map(x=>`<button class="card" data-t="${x.t}" data-k="${x.k}" data-s="${x.s.join('|')}" data-h="${x.h}"><div class="pos" style="background:linear-gradient(160deg,hsl(${x.h} 60% 38%),hsl(${x.h+40} 50% 14%))"><img src='invalid://placeholder' loading='lazy' onerror="fixPoster(this,'${esc(x.t)}','${x.k}')"></div><div class='card-play-btn' data-card-play title='Play'>▶</div><small>${x.s[0]}</small></button>`).join('')+'</div></div>'});
+  $('#view').innerHTML=h||'<div class="desc">Nothing from this source yet.</div>';
+  hookCards();
+}
+
+/* ================= OPTIMIZED INSTANT-LOAD PLAYER ================= */
+let activeHls = null, activeTs = null;
+function destroyPlayers(){
+  if(activeHls){ try{activeHls.destroy()}catch(e){} activeHls=null; }
+  if(activeTs){ try{activeTs.pause();activeTs.unload();activeTs.detachMediaElement();activeTs.destroy()}catch(e){} activeTs=null; }
+}
+
+function full(src, fallbackTsSrc, isLive){
+  destroyPlayers();
+  const title = $('#hero h1') ? $('#hero h1').textContent : 'Media Stream';
+  $('#fsbadge').textContent = isLive ? 'LIVE' : 'VOD';
+  $('#fsfb').style.display = isLive ? 'none' : 'inline-block';
+  $('#fst').innerHTML = `<h1 style="font-size:22px;margin:0">${esc(title)}</h1><div id="pstat" style="font-size:12px;color:var(--mu)">Connecting instantly…</div>`;
+  
+  const container = $('#fs-video-container');
+  container.innerHTML = '';
+  const v = document.createElement('video');
+  v.controls = true; v.autoplay = true; v.playsInline = true;
+  container.appendChild(v);
+  
+  $('#fs').classList.add('on');
+  $('#fsx').focus();
+
+  const stat = m => { const el=$('#pstat'); if(el) el.textContent = m; };
+
+  if(!src){ stat('Demo mode: Sign in with your Xtream provider to play real video.'); return; }
+
+  const playTs = tsUrl => {
+    if(window.mpegts && mpegts.getFeatureList().mseLivePlayback){
+      stat('Playing MPEG-TS (Low latency tuning)…');
+      activeTs = mpegts.createPlayer({ type: 'mpegts', isLive: !!isLive, url: tsUrl }, { 
+        enableWorker: true, 
+        stashInitialSize: 128 * 1024,
+        liveBufferLatencyChasing: true,
+        autoCleanupSourceBuffer: true
+      });
+      activeTs.attachMediaElement(v);
+      activeTs.load();
+      activeTs.play().catch(()=>{});
+      activeTs.on(mpegts.Events.ERROR, () => stat('Stream re-negotiating…'));
+    } else {
+      v.src = tsUrl;
+      v.play().catch(()=>{});
+    }
+  };
+
+  if(/\.m3u8(\?|$)/i.test(src)){
+    if(window.Hls && Hls.isSupported()){
+      stat('Playing HLS stream…');
+      activeHls = new Hls({ 
+        enableWorker: true, 
+        lowLatencyMode: !!isLive,
+        maxLiveSyncPlaybackRate: 1.5,
+        liveSyncDurationCount: 2
+      });
+      activeHls.loadSource(src);
+      activeHls.attachMedia(v);
+      activeHls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>{}));
+      activeHls.on(Hls.Events.ERROR, (e, data) => {
+        if(data.fatal){
+          destroyPlayers();
+          if(fallbackTsSrc) playTs(fallbackTsSrc);
+          else stat('Stream unavailable or blocked.');
+        }
+      });
+    } else if(v.canPlayType('application/vnd.apple.mpegurl')){
+      v.src = src; v.play().catch(()=>{}); stat('Playing via Safari native HLS…');
+    }
+  } else if(/\.ts(\?|$)/i.test(src)){
+    playTs(src);
+  } else {
+    v.src = src; v.play().catch(()=>{});
+    v.onerror = () => { if(fallbackTsSrc) playTs(fallbackTsSrc); else stat('Playback error.'); };
+  }
+}
+
+function closeFs(){
+  destroyPlayers();
+  $('#fs').classList.remove('on');
+  $('#fs-video-container').innerHTML = '';
+  const s=$('.p.sel') || $('.card.sel'); if(s)s.focus();
+}
+
+async function openXtreamSeries(item){
+  if(!REAL || !item.id){ toast('Demo Series: Sign in to load real episodes.'); return; }
+  const m = $('#modal'), mb = $('#mbox');
+  mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">${esc(item.t)}</h3></div><p>Loading seasons & episodes…</p>`;
+  m.classList.add('on');
+  try {
+    const info = await ap('get_series_info', '&series_id=' + enc(item.id));
+    const epsBySeason = info.episodes || {};
+    const seasons = Object.keys(epsBySeason);
+    if(!seasons.length){ mb.innerHTML += `<p>No episodes returned by provider.</p>`; return; }
+    
+    const renderSeason = sKey => {
+      const list = epsBySeason[sKey] || [];
+      $('#epContainer').innerHTML = `<div class="ep-list-grid">` + list.map(ep => {
+        const ext = ep.container_extension || 'mp4';
+        const url = su('series', ep.id, ext);
+        const epPoster = ep.cover_big || ep.info?.movie_image || item.img || '';
+        const epDesc = ep.plot || ep.info?.plot || blurb(item.t);
+        const epTitle = ep.title || ('Episode ' + ep.episode_num);
+        return `<button class="ep-row-card" data-ep-url="${esc(url)}">
+          <div class="ep-thumb">
+            ${epPoster?`<img src="${esc(epPoster)}" referrerpolicy="no-referrer" onerror="this.remove()">`:''}
+            <div class="ep-play-overlay">▶</div>
+          </div>
+          <div class="ep-info">
+            <h4>E${ep.episode_num} · ${esc(epTitle)}</h4>
+            <p>${esc(epDesc)}</p>
+            <div class="ep-meta"><span>⏱ 45m</span><span>★ 7.5</span><span>${ext.toUpperCase()}</span></div>
+          </div>
+        </button>`;
+      }).join('') + `</div>`;
+    };
+
+    mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">${esc(item.t)}</h3></div>
+      <div class="cats" style="margin-bottom:16px">${seasons.map((s,i)=>`<button class="btn ${i===0?'p':''}" data-sbtn="${s}">Season ${s}</button>`).join('')}</div>
+      <div id="epContainer"></div>`;
+    renderSeason(seasons[0]);
+    
+    mb.onclick = e => {
+      if(e.target.id === 'mclose' || e.target.id === 'modal') m.classList.remove('on');
+      const sb = e.target.closest('[data-sbtn]');
+      if(sb){ mb.querySelectorAll('[data-sbtn]').forEach(x=>x.classList.remove('p')); sb.classList.add('p'); renderSeason(sb.dataset.sbtn); }
+      const eb = e.target.closest('[data-ep-url]');
+      if(eb){ m.classList.remove('on'); full(eb.dataset.epUrl, null, false); }
+    };
+  } catch(err){ mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">${esc(item.t)}</h3></div><p>Failed to load episodes.</p>`; }
+}
+
+const getAddons = () => store.get('addons', [{n:'Cinemeta',u:'https://v3-cinemeta.strem.io/manifest.json',on:1}]);
+const addonBase = url => url.replace(/\/manifest\.json$/i, '');
+
+const stremioCardHtml = (item, idx, sourceName) => {
+  const h = (idx * 47 + 210) % 360;
+  const poster = item.poster || '';
+  const imdb = item.imdb_id || item.id || '';
+  return `<button class="card" data-t="${esc(item.name)}" data-k="${item.type==='series'?'Series':'Films'}" data-s="${esc(sourceName)}" data-h="${h}" data-imdb="${esc(imdb)}" data-stype="${esc(item.type)}" data-img="${esc(poster)}" data-desc="${esc(item.description||'')}">
+    <div class="pos" style="background:linear-gradient(160deg,hsl(${h} 60% 38%),hsl(${h+40} 50% 14%))">
+      ${poster?`<img src="${esc(poster)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}
+    </div>
+    <div class='card-play-btn' data-card-play title='Play'>▶</div>
+    <small>${esc(item.name)}</small>
+  </button>`;
+};
+
+async function searchStremioHub(term){
+  const q = term.trim();
+  if(!q) return renderStremioHub();
+  $('#cats').innerHTML = '';
+  $('#view').innerHTML = `<div class="desc" style="display:block">Searching Stremio catalogs for "${esc(q)}"…</div>`;
+  try {
+    const [mRes, sRes] = await Promise.all([
+      fetch(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${encodeURIComponent(q)}.json`).then(r=>r.json()).catch(()=>({metas:[]})),
+      fetch(`https://v3-cinemeta.strem.io/catalog/series/top/search=${encodeURIComponent(q)}.json`).then(r=>r.json()).catch(()=>({metas:[]}))
+    ]);
+    const movies = (mRes.metas || []).slice(0, 20);
+    const series = (sRes.metas || []).slice(0, 20);
+    let h = '';
+    if(movies.length) h += `<div class="rail-header"><h3>Stremio Movies (${movies.length})</h3></div><div class="cards">${movies.map((m,i)=>stremioCardHtml(m,i,'Cinemeta Search')).join('')}</div>`;
+    if(series.length) h += `<div class="rail-header"><h3>Stremio Series (${series.length})</h3></div><div class="cards">${series.map((s,i)=>stremioCardHtml(s,i+10,'Cinemeta Search')).join('')}</div>`;
+    $('#view').innerHTML = h || `<div class="desc" style="display:block">No Stremio matches found for "${esc(q)}".</div>`;
+    hookCards();
+  } catch(e){ $('#view').innerHTML = `<div class="desc" style="display:block">Search failed.</div>`; }
+}
+
+async function renderStremioHub(){
+  if(st.query && st.query.trim()) return searchStremioHub(st.query);
+  const addons = getAddons().filter(a => a.on);
+  $('#hero').innerHTML = `<div class="hero-content"><div class="hero-meta"><span class="badge" style="background:var(--c)">FALLBACK HUB</span><b>Stremio Addons</b></div><h1>Stremio Catalogs & Streams</h1><div class="hero-desc">Browse catalogs directly from your enabled Stremio addons.</div></div>`;
+  
+  if(!addons.length){
+    $('#cats').innerHTML = '';
+    $('#view').innerHTML = `<div class="box"><h3>No Stremio Addons Enabled</h3><p>Go to <b>Addons</b> in the left menu and paste a Stremio addon manifest URL.</p><button class="btn p" data-n="addons">Open Addons</button></div>`;
+    return;
+  }
+
+  $('#cats').style.display = '';
+  $('#cats').innerHTML = ['All Addons', ...addons.map(a => a.n)].map(name => `<button class="${st.stremioCat==name?'on':''}" data-scat="${esc(name)}">${esc(name)}</button>`).join('');
+  $('#view').innerHTML = `<div class="desc" style="display:block">Fetching catalogs…</div>`;
+
+  let railsHtml = '';
+  const activeList = st.stremioCat === 'All Addons' ? addons : addons.filter(a => a.n === st.stremioCat);
+
+  for(const ad of activeList){
+    try {
+      const mRes = await fetch(ad.u);
+      const manifest = await mRes.json();
+      const base = addonBase(ad.u);
+      const catalogs = (manifest.catalogs || []).filter(c => !(c.extra || []).some(ex => ex.isRequired));
+
+      for(const cat of catalogs.slice(0, 6)){
+        try {
+          const cRes = await fetch(`${base}/catalog/${cat.type}/${cat.id}.json`);
+          const cData = await cRes.json();
+          const metas = (cData.metas || []).slice(0, 20);
+          if(!metas.length) continue;
+          const label = `${manifest.name || ad.n} · ${cat.name || cat.id} (${cat.type === 'series' ? 'Series' : 'Movies'})`;
+          railsHtml += `<div class="rail-header"><h3>${esc(label)}</h3></div><div class="cards">` + metas.map((item, idx) => stremioCardHtml(item, idx, manifest.name || ad.n)).join('') + `</div>`;
+        } catch(e){}
+      }
+    } catch(e){}
+  }
+  $('#view').innerHTML = railsHtml || `<div class="desc" style="display:block">No public catalogs found.</div>`;
+  hookCards();
+}
+
+async function resolveStremioStreams(title, type, imdbId){
+  const addons = getAddons().filter(a => a.on);
+  const m = $('#modal'), mb = $('#mbox');
+  m.classList.add('on');
+  mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">Stremio Streams: ${esc(title)}</h3></div><p>Querying Stremio addons…</p>`;
+
+  let idToQuery = imdbId;
+  if(!idToQuery || !/^tt\d+/.test(idToQuery)){
+    try {
+      const cleanName = cleanTitleForMeta(title);
+      const sType = type === 'Series' || type === 'series' ? 'series' : 'movie';
+      const searchRes = await fetch(`https://v3-cinemeta.strem.io/catalog/${sType}/top/search=${encodeURIComponent(cleanName)}.json`);
+      const searchJson = await searchRes.json();
+      if(searchJson.metas && searchJson.metas[0]) idToQuery = searchJson.metas[0].imdb_id || searchJson.metas[0].id;
+    } catch(e){}
+  }
+
+  if(!idToQuery){ mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">${esc(title)}</h3></div><p>Could not match an IMDb ID for this title.</p>`; return; }
+
+  const stremioType = (type === 'Series' || type === 'series') ? 'series' : 'movie';
+  const streamId = stremioType === 'series' && !idToQuery.includes(':') ? `${idToQuery}:1:1` : idToQuery;
+
+  let allStreams = [];
+  for(const ad of addons){
+    try {
+      const res = await fetch(`${addonBase(ad.u)}/stream/${stremioType}/${encodeURIComponent(streamId)}.json`);
+      const data = await res.json();
+      if(Array.isArray(data.streams)) data.streams.forEach(s => allStreams.push({ addon: ad.n, ...s }));
+    } catch(e){}
+  }
+
+  if(!allStreams.length){ mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">${esc(title)}</h3></div><p>No streams returned from Stremio addons.</p>`; return; }
+
+  mb.innerHTML = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px"><button class="btn" id="mclose">← Back</button><h3 style="font-size:26px;margin:0">Available Streams (${allStreams.length})</h3></div>
+    <div style="margin-top:10px">` + allStreams.map(s => {
+      const label = s.name || s.addon;
+      const desc = (s.title || s.description || 'Direct Stream').replace(/\n/g, ' · ');
+      const playableUrl = s.url || '';
+      return `<div class="li"><div style="min-width:0;flex:1"><b>${esc(label)}</b><br><small>${esc(desc)}</small></div>${playableUrl ? `<button class="btn p" data-play-direct="${esc(playableUrl)}">Play</button>` : `<span class="chip">Magnet</span>`}</div>`;
+    }).join('') + `</div>`;
+}
+
+function sources(){
+const ad=getAddons(),dk=store.get('debrid',{}),ms=store.get('media',{Plex:0,Emby:0,Jellyfin:0});
+$('#hero').innerHTML=`<div class="hero-content"><h1>${st.nav=='addons'?'Addons':'Settings'}</h1><div class="hero-desc">Manage your Stremio fallback addons, debrid keys, and IPTV settings.</div></div>`;
+$('#view').innerHTML=`${st.nav=='settings'?`<div class="box"><h3>Provider</h3><p>Xtream login for live TV, guide and VOD.</p><div class="f"><button class="btn" id="out">Sign out</button><button class="btn" id="panel">Open panel</button></div></div>`:''}${st.nav=='addons'?`
+<div class="box"><h3>Stremio Fallback Addons</h3><p>Paste a manifest.json URL.</p><div class="f"><input id="au" placeholder="https://…/manifest.json"><button class="btn p" id="aa">Add addon</button></div>
+${ad.map((a,i)=>`<div class="li"><span><b>${esc(a.n)}</b><br><small style="color:var(--mu)">${esc(a.u)}</small></span><span style="display:flex;gap:8px;align-items:center"><button class="sw ${a.on?'on':''}" data-ad="${i}"></button><button class="btn" data-adel="${i}">✕</button></span></div>`).join('')}</div>
+`:''}${st.nav=='settings'?`<div class="box"><h3>Media servers</h3><p>Mount your library.</p>${Object.keys(ms).map(k=>`<div class="li"><span>${k}</span><button class="sw ${ms[k]?'on':''}" data-ms="${k}"></button></div>`).join('')}</div><div class='box'><h3>Home</h3><p>Choose what appears on Home.</p>${HK.map(x=>`<div class='li'><span>${x[1]}</span><button class='sw ${pf.home[x[0]]?'on':''}' data-hp='${x[0]}'></button></div>`).join('')}</div>`:''}`;
+const v=$('#view');v.onclick=e=>{const t=e.target;
+if(t.id=='aa'){const u=$('#au').value.trim();if(!/^https?:\/\/.+manifest\.json$/i.test(u))return toast('Enter a valid manifest.json URL');ad.push({n:new URL(u).hostname,u,on:1});store.set('addons',ad);sources();toast('Addon added')}
+if(t.dataset.ad){ad[t.dataset.ad].on^=1;store.set('addons',ad);sources()}
+if(t.dataset.adel){ad.splice(+t.dataset.adel,1);store.set('addons',ad);sources();toast('Addon removed')}
+if(t.dataset.ms){ms[t.dataset.ms]^=1;store.set('media',ms);sources()}
+if(t.dataset.hp){pf.home[t.dataset.hp]^=1;store.set('pf',pf);sources()}
+if(t.id=='out'){store.set('in',0);store.set('sess',null);SESS=null;REAL=0;store.set('secs',['live','movies','series']);secs=['live','movies','series'];loadSv();$('#login').style.display='grid'}
+}}
+
+function render(){
+  rNav();rTabs();
+  const n=st.nav;
+  const showSearch = ['films','series','stremio'].includes(n);
+  $('#searchWrap').style.display = showSearch ? 'flex' : 'none';
+  if(showSearch){
+    $('#q').placeholder = n === 'films' ? 'Search movies…' : n === 'series' ? 'Search TV series…' : 'Search Stremio movies & series…';
+    $('#q').value = st.query || '';
+    $('#qclr').style.display = st.query ? 'inline-block' : 'none';
+  }
+  $('#cats').style.display=['live','films','series','stremio'].includes(n)?'':'none';
+  $('#keys').style.display=n=='live'?'':'none';
+
+  if(n=='live'){const lc=vis('live',cats);if(!lc.includes(st.cat))st.cat=lc[0];$('#cats').innerHTML=lc.map(c=>`<button class="${c==st.cat?'on':''}" data-c="${c}">${c}</button>`).join('');st.sel=null;if(lc.length){if(REAL){realClock();$('#view').innerHTML="<div class='desc' style='display:block'>Loading channels\u2026</div>";const cat=st.cat;ensure('live',cat).then(()=>{if(st.nav=='live'&&st.cat==cat){guide();loadEpg()}})}else guide()}else{$('#hero').innerHTML="<div class='hero-content'><h1>Live TV</h1></div>";$('#view').innerHTML="<div class='desc' style='display:block'>All live groups are hidden.</div>"}}
+  else if(n=='home')home();
+  else if(n=='stremio')renderStremioHub();
+  else if(n=='watch')watch();
+  else if(n=='groups')groups();
+  else if(n=='addons'||n=='settings'){sources();if(n=='settings')decorate()}
+  else vod(n)
+}
+
+let searchTimer = null;
+$('#q').addEventListener('input', e => {
+  st.query = e.target.value;
+  $('#qclr').style.display = st.query ? 'inline-block' : 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    if(st.nav === 'films' || st.nav === 'series') vod(st.nav);
+    else if(st.nav === 'stremio') renderStremioHub();
+  }, 320);
+});
+$('#qclr').addEventListener('click', () => { st.query = ''; $('#q').value = ''; $('#qclr').style.display = 'none'; render(); });
+
+document.addEventListener('click',e=>{
+const b=e.target.closest('[data-n]');if(b){st.nav=b.dataset.n;st.query='';render()}
+const c=e.target.closest('#cats [data-c]');if(c){st.cat=c.dataset.c;render()}
+const sc=e.target.closest('#cats [data-scat]');if(sc){st.stremioCat=sc.dataset.scat;renderStremioHub()}
+const s=e.target.closest('#cats [data-s]');if(s){st.src=s.dataset.s;render()}
+
+const cp = e.target.closest('[data-card-play]');
+if(cp){ const card = cp.closest('.card'); if(card){ openInfoModal(card); } return; }
+
+if(e.target.closest('[data-hero-play]')){ playCurItem(); }
+if(e.target.closest('[data-hero-info]')){ if(st.cur) openInfoModalFromCur(); }
+
+if(e.target.closest('[data-stremio-play]') || e.target.id === 'fsfb'){
+  if($('#fs').classList.contains('on')) closeFs();
+  const item = st.cur || { t: $('#hero h1')?$('#hero h1').textContent:'', k: 'Films', imdb: '' };
+  resolveStremioStreams(item.t, item.k, item.imdb);
+}
+
+const pd = e.target.closest('[data-play-direct]');
+if(pd){ $('#modal').classList.remove('on'); full(pd.dataset.playDirect, null, false); }
+
+if(e.target.id === 'mclose' || e.target.id === 'modal') $('#modal').classList.remove('on');
+if(e.target.id === 'fsx') closeFs();
+
+if(e.target.closest('[data-more]')){st.mx=(st.mx||8)+8;render()}
+const wb=e.target.closest('[data-wl]');if(wb&&st.cur){const i=wl.findIndex(x=>x.t==st.cur.t);if(i>=0)wl.splice(i,1);else wl.push(st.cur);store.set('wl',wl);wb.textContent=i>=0?'+ Watchlist':'✓ In watchlist';toast(i>=0?'Removed from watchlist':'Added to watchlist')}
+const sd=e.target.closest('[data-ss],[data-pf],[data-pd],[data-pnew],[data-pcs],[data-plk],[data-ar],[data-rf],[data-ap]');
+if(sd&&st.nav=='settings'){const d=sd.dataset;let ok=1;
+if('ss' in d)st.ss=d.ss;
+else if('pf' in d){pa=+d.pf;store.set('pa',pa);st.unl=0}
+else if('pd' in d){prof.splice(+d.pd,1);if(pa>=prof.length)pa=0;store.set('prof',prof);store.set('pa',pa)}
+else if('pnew' in d){const n=$('#pn').value.trim();if(n)prof.push({n,kid:$('#pk').checked?1:0});store.set('prof',prof)}
+else if('pcs' in d){pc=$('#pcd').value.trim();store.set('pc',pc)}
+else if('plk' in d){pl^=1;store.set('pl',pl)}
+else if('ar' in d){ar={Weekly:'Daily',Daily:'Never',Never:'Weekly'}[ar];store.set('ar',ar)}
+else if('rf' in d){ok=0;loadReal()}
+if(ok){sources();decorate()}}
+const gg=e.target.closest('[data-gs],[data-gb],[data-gm],[data-ha],[data-hg],[data-pg],[data-up],[data-dn]');
+if(gg&&st.nav=='groups'){const d=gg.dataset,k=st.gs,tg=(a,v)=>{const i=a.indexOf(v);i<0?a.push(v):a.splice(i,1)};
+if('gs' in d){st.gs=d.gs;st.gm='hide'}else if('gb' in d)st.gs=null;else if('gm' in d)st.gm=d.gm;else if('ha' in d)pf.hidden[k]=d.ha=='1'?[...gl(k)]:[];else if('hg' in d)tg(pf.hidden[k],d.hg);else if('pg' in d)tg(pf.pinned[k],d.pg);
+else{const p=pf.pinned[k],n=d.up||d.dn,i=p.indexOf(n),j=i+(d.up?-1:1);if(j>=0&&j<p.length)[p[i],p[j]]=[p[j],p[i]]}
+store.set('pf',pf);groups();}
+});
+
+function openInfoModalFromCur(){
+  if(!st.cur) return;
+  const m = $('#modal'), mb = $('#mbox');
+  mb.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+      <button class="btn" id="mclose" style="font-size:18px;padding:4px 12px">← Back</button>
+      <h3 style="font-size:26px;margin:0">${esc(st.cur.t)}</h3>
+    </div>
+    <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:16px">
+        <p style="font-size:14px;line-height:1.6;color:#d8cde6;margin:0">${esc(blurb(st.cur.t))}</p>
+        <div class="acts" style="display:flex;gap:12px;margin-top:10px">
+          <button class="btn p" id="modalPlayBtn" style="padding:12px 28px;font-size:15px">▶ Play</button>
+          <button class="btn" id="modalWlBtn" style="padding:12px 20px;font-size:15px">${wl.some(x=>x.t==st.cur.t)?'✓ In watchlist':'+ Watchlist'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  m.classList.add('on');
+  mb.onclick = ev => {
+    if(ev.target.id === 'mclose' || ev.target.id === 'modal') m.classList.remove('on');
+    if(ev.target.id === 'modalPlayBtn'){ m.classList.remove('on'); playCurItem(); }
+  };
+}
+
+document.addEventListener('keydown',e=>{const k=e.key,a=document.activeElement;
+if($('#modal').classList.contains('on')){if(k=='Escape'||k=='Backspace'||k=='GoBack'){$('#modal').classList.remove('on');e.preventDefault()}return}
+if($('#fs').classList.contains('on')){if(k=='Escape'||k=='Backspace'||k=='GoBack')closeFs();e.preventDefault();return}
+if(a&&a.tagName=='INPUT')return;
+const lg=getComputedStyle($('#login')).display!='none';
+if(k=='Escape'||k=='Backspace'||k=='GoBack'){if(!lg&&st.nav!='home'){st.nav='home';render()}e.preventDefault();return}
+const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[k];if(!d)return;
+if(!a||a===document.body){(lg?$('#lu'):$('#nav .on')||$('#nav button')).focus();e.preventDefault();return}
+const r=a.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bs=1e9;
+document.querySelectorAll(lg?'#login button,#login input':'button,input').forEach(el=>{if(el===a||!el.getClientRects().length)return;const q=el.getBoundingClientRect(),dx=q.left+q.width/2-cx,dy=q.top+q.height/2-cy,al=d[0]?dx*d[0]:dy*d[1],pp=d[0]?Math.abs(dy):Math.abs(dx);if(al<2)return;const s=al+pp*2.5;if(s<bs){bs=s;best=el}});
+if(best){best.focus();e.preventDefault()}});
+
+function enter(){$('#login').style.display='none';store.set('in',1);render()}
+$('#demo').onclick=()=>{REAL=0;SESS=null;store.set('sess',null);secs=['live','movies','series'];store.set('secs',secs);enter()};
+const pu=()=>{const v=$('#lu').value.trim();return !v?'panel.php':/\.php$/.test(v)?v:v.replace(/\/+$/,'')+'/panel.php'};
+async function loadSv(){const s=$('#sv');try{const j=await(await fetch(pu()+'?api=services')).json();if(!Array.isArray(j)||!j.length)throw 0;s.replaceChildren(...j.map(x=>new Option(x.name,x.id)));$('#lm').textContent=''}catch(e){s.replaceChildren();$('#lm').textContent='Cannot reach the panel from here.'}}
+$('#lu').onchange=loadSv;
+
+$('#go').onclick=async()=>{
+  const sv=$('#sv').value;
+  if(!sv||!$('#lun').value||!$('#lp').value)return toast('Pick a service and credentials');
+  try{
+    const j=await(await fetch(pu()+'?api=login&service='+encodeURIComponent(sv),{method:'POST',body:new URLSearchParams({u:$('#lun').value,p:$('#lp').value})})).json();
+    if(!j.ok)return toast(j.error||'Login failed');
+    SESS={b:pu(),sv,u:$('#lun').value,p:$('#lp').value};
+    store.set('sess',SESS);
+    enter();
+    loadReal();
+  }catch(e){
+    toast('Cannot reach panel');
+  }
+};
+
+setInterval(()=>{$('#clock').textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})},1000);$('#clock').textContent='3:33 PM';
+setTheme(store.get('th','aurora'));loadSv();
+if(store.get('in',0))enter();else render();if(store.get('in',0)&&SESS)loadReal();
+</script></body></html>
