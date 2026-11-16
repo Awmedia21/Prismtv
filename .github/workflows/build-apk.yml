@@ -12,11 +12,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Create Android Project Structure & Build APK
         run: |
@@ -130,4 +129,3 @@ jobs:
         with:
           name: prism-iptv-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-
